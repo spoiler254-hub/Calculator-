@@ -10,12 +10,16 @@
       --text: #000;
       --input-bg: #fff;
       --result: green;
+      --button-bg: #e0e0e0;
+      --button-hover: #ccc;
     }
     body.dark {
       --bg: #1e1e1e;
       --text: #f0f0f0;
       --input-bg: #333;
       --result: #4cd137;
+      --button-bg: #444;
+      --button-hover: #666;
     }
     body {
       background-color: var(--bg);
@@ -26,56 +30,65 @@
       transition: all 0.3s ease;
     }
     h1 {
-      margin-bottom: 20px;
+      margin-bottom: 10px;
     }
     input {
       width: 90%;
       max-width: 500px;
       padding: 12px;
       font-size: 18px;
-      margin-bottom: 10px;
-      border: 1px solid #ccc;
       border-radius: 6px;
-      background-color: var(--input-bg);
+      background: var(--input-bg);
       color: var(--text);
-    }
-    button {
-      padding: 10px 25px;
-      font-size: 16px;
-      margin: 8px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      background-color: #007bff;
-      color: white;
-      transition: background 0.3s;
-    }
-    button:hover {
-      background-color: #0056b3;
+      border: 1px solid #ccc;
+      margin-bottom: 15px;
     }
     #result {
       font-size: 20px;
-      margin-top: 20px;
+      margin-top: 15px;
       color: var(--result);
+    }
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    .keypad button {
+      padding: 15px;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      background: var(--button-bg);
+      color: var(--text);
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    .keypad button:hover {
+      background: var(--button-hover);
+    }
+    .toggle {
+      margin-top: 10px;
+      background: none;
+      border: none;
+      font-size: 14px;
+      cursor: pointer;
+      color: #007bff;
     }
     .hint {
       font-size: 14px;
-      margin-top: 20px;
       color: var(--text);
       opacity: 0.7;
-    }
-    .toggle {
-      margin-top: 15px;
-      display: inline-block;
-      font-size: 14px;
-      cursor: pointer;
-      background: none;
-      border: none;
-      color: #007bff;
+      margin-top: 20px;
     }
     @media (max-width: 600px) {
-      input, button {
+      input {
         font-size: 16px;
+      }
+      .keypad button {
+        padding: 12px;
+        font-size: 14px;
       }
     }
   </style>
@@ -85,25 +98,75 @@
   <h1>Scientific Calculator</h1>
 
   <input type="text" id="expression" placeholder="e.g., sqrt(25) + sin(30)" />
-  <br>
-  <button onclick="calculate()">Calculate</button>
+  <div class="keypad">
+    <button onclick="append('7')">7</button>
+    <button onclick="append('8')">8</button>
+    <button onclick="append('9')">9</button>
+    <button onclick="append(' / ')">÷</button>
+    <button onclick="append('sqrt(')">√</button>
+
+    <button onclick="append('4')">4</button>
+    <button onclick="append('5')">5</button>
+    <button onclick="append('6')">6</button>
+    <button onclick="append(' * ')">×</button>
+    <button onclick="append('^')">^</button>
+
+    <button onclick="append('1')">1</button>
+    <button onclick="append('2')">2</button>
+    <button onclick="append('3')">3</button>
+    <button onclick="append(' - ')">−</button>
+    <button onclick="append('%')">%</button>
+
+    <button onclick="append('0')">0</button>
+    <button onclick="append('.')">.</button>
+    <button onclick="append(' + ')">+</button>
+    <button onclick="append('mod(')">mod</button>
+    <button onclick="append('!')">!</button>
+
+    <button onclick="append('sin(')">sin</button>
+    <button onclick="append('cos(')">cos</button>
+    <button onclick="append('tan(')">tan</button>
+    <button onclick="append('log(')">ln</button>
+    <button onclick="append('log10(')">log₁₀</button>
+
+    <button onclick="clearInput()">C</button>
+    <button onclick="append('(')">(</button>
+    <button onclick="append(')')">)</button>
+    <button onclick="calculate()" colspan="2">=</button>
+  </div>
+
   <button class="toggle" onclick="toggleDarkMode()">🌙 Toggle Dark Mode</button>
 
   <div id="result">Result:</div>
 
   <div class="hint">
-    Supported: +, -, *, /, ^, sqrt(x), sin(x), cos(x), tan(x), mod(x,y), factorial(x), log(x), log10(x)<br>
-    Trig functions use degrees. Try: sin(30), 2^3, mod(10,3), log(2.71828)
+    Use expression input or keypad.<br>
+    Trig functions in degrees. Supports +, -, *, /, sqrt, sin, cos, tan, mod, ^, factorial (!), log, log10
   </div>
 
   <script>
+    const input = document.getElementById("expression");
+
+    function append(val) {
+      if (val === '!') {
+        input.value += ')'; // auto close
+        input.value = 'factorial(' + input.value;
+      } else {
+        input.value += val;
+      }
+    }
+
+    function clearInput() {
+      input.value = '';
+      document.getElementById('result').innerText = 'Result:';
+    }
+
     function calculate() {
-      const expr = document.getElementById('expression').value;
       try {
-        const result = evalExpression(expr);
-        document.getElementById('result').innerText = "Result: " + result;
+        const result = evalExpression(input.value);
+        document.getElementById("result").innerText = "Result: " + result;
       } catch (err) {
-        document.getElementById('result').innerText = "Error: " + err.message;
+        document.getElementById("result").innerText = "Error: " + err.message;
       }
     }
 
@@ -125,7 +188,6 @@
       const safeExpr = expr.replace(/\^/g, '**');
       const funcNames = Object.keys(safeFuncs);
       const funcValues = funcNames.map(k => safeFuncs[k]);
-
       const f = new Function(...funcNames, "return " + safeExpr);
       return f(...funcValues);
     }
