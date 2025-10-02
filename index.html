@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -98,41 +99,55 @@
   <h1>Scientific Calculator</h1>
 
   <input type="text" id="expression" placeholder="e.g., sqrt(25) + sin(30)" />
+  
   <div class="keypad">
+    <!-- Row 1: Memory -->
+    <button onclick="memoryClear()">MC</button>
+    <button onclick="memoryRecall()">MR</button>
+    <button onclick="memoryAdd()">M+</button>
+    <button onclick="memorySubtract()">M-</button>
+    <button onclick="append('pi')">π</button>
+
+    <!-- Row 2: Scientific -->
+    <button onclick="append('e')">e</button>
+    <button onclick="append('sin(')">sin</button>
+    <button onclick="append('cos(')">cos</button>
+    <button onclick="append('tan(')">tan</button>
+    <button onclick="append('sqrt(')">√</button>
+
+    <!-- Row 3: Logs & power -->
+    <button onclick="append('^')">^</button>
+    <button onclick="append('log(')">ln</button>
+    <button onclick="append('log10(')">log₁₀</button>
+    <button onclick="append('!')">!</button>
+    <button onclick="append('%')">%</button>
+
+    <!-- Row 4: Numbers -->
     <button onclick="append('7')">7</button>
     <button onclick="append('8')">8</button>
     <button onclick="append('9')">9</button>
     <button onclick="append(' / ')">÷</button>
-    <button onclick="append('sqrt(')">√</button>
+    <button onclick="append(' * ')">×</button>
 
+    <!-- Row 5 -->
     <button onclick="append('4')">4</button>
     <button onclick="append('5')">5</button>
     <button onclick="append('6')">6</button>
-    <button onclick="append(' * ')">×</button>
-    <button onclick="append('^')">^</button>
+    <button onclick="append(' - ')">−</button>
+    <button onclick="append(' + ')">+</button>
 
+    <!-- Row 6 -->
     <button onclick="append('1')">1</button>
     <button onclick="append('2')">2</button>
     <button onclick="append('3')">3</button>
-    <button onclick="append(' - ')">−</button>
-    <button onclick="append('%')">%</button>
-
-    <button onclick="append('0')">0</button>
     <button onclick="append('.')">.</button>
-    <button onclick="append(' + ')">+</button>
-    <button onclick="append('mod(')">mod</button>
-    <button onclick="append('!')">!</button>
+    <button onclick="append('0')">0</button>
 
-    <button onclick="append('sin(')">sin</button>
-    <button onclick="append('cos(')">cos</button>
-    <button onclick="append('tan(')">tan</button>
-    <button onclick="append('log(')">ln</button>
-    <button onclick="append('log10(')">log₁₀</button>
-
-    <button onclick="clearInput()">C</button>
+    <!-- Row 7 -->
     <button onclick="append('(')">(</button>
     <button onclick="append(')')">)</button>
-    <button onclick="calculate()" colspan="2">=</button>
+    <button onclick="clearInput()">C</button>
+    <button style="grid-column: span 2;" onclick="calculate()">=</button>
   </div>
 
   <button class="toggle" onclick="toggleDarkMode()">🌙 Toggle Dark Mode</button>
@@ -140,17 +155,23 @@
   <div id="result">Result:</div>
 
   <div class="hint">
-    Use expression input or keypad.<br>
-    Trig functions in degrees. Supports +, -, *, /, sqrt, sin, cos, tan, mod, ^, factorial (!), log, log10
+    Click the keypad or type in the box.<br>
+    Supports +, −, ×, ÷, %, sqrt, sin, cos, tan, ^, factorial (!), log, log10, π, e.<br>
+    Memory: MC, MR, M+, M−.<br>
+    Trig functions in degrees. Press Enter to calculate.
   </div>
 
   <script>
     const input = document.getElementById("expression");
+    let memory = 0;
 
     function append(val) {
       if (val === '!') {
-        input.value += ')'; // auto close
-        input.value = 'factorial(' + input.value;
+        const match = input.value.match(/(\d+)(?!.*\d)/); 
+        if (match) {
+          const num = match[0];
+          input.value = input.value.replace(/(\d+)(?!.*\d)/, `factorial(${num})`);
+        }
       } else {
         input.value += val;
       }
@@ -163,10 +184,15 @@
 
     function calculate() {
       try {
-        const result = evalExpression(input.value);
+        let result = evalExpression(input.value);
+        if (typeof result === "number") {
+          result = Math.round((result + Number.EPSILON) * 1e10) / 1e10;
+        }
         document.getElementById("result").innerText = "Result: " + result;
+        return result;
       } catch (err) {
         document.getElementById("result").innerText = "Error: " + err.message;
+        return null;
       }
     }
 
@@ -175,14 +201,15 @@
         sin: x => Math.sin(toRad(x)),
         cos: x => Math.cos(toRad(x)),
         tan: x => Math.tan(toRad(x)),
-        sqrt: x => Math.sqrt(x),
-        log: x => Math.log(x),
-        log10: x => Math.log10(x),
-        factorial: x => {
-          if (x < 0 || !Number.isInteger(x)) throw new Error("Invalid factorial input");
-          return x === 0 ? 1 : Array.from({length: x}, (_, i) => i + 1).reduce((a, b) => a * b);
+        sqrt: Math.sqrt,
+        log: Math.log,
+        log10: Math.log10,
+        factorial: n => {
+          if (n < 0 || !Number.isInteger(n)) throw new Error("Invalid factorial input");
+          return n === 0 ? 1 : Array.from({length: n}, (_, i) => i + 1).reduce((a, b) => a * b);
         },
-        mod: (x, y) => x % y
+        pi: Math.PI,
+        e: Math.E
       };
 
       const safeExpr = expr.replace(/\^/g, '**');
@@ -199,6 +226,37 @@
     function toggleDarkMode() {
       document.body.classList.toggle("dark");
     }
+
+    // Memory functions
+    function memoryClear() {
+      memory = 0;
+      document.getElementById("result").innerText = "Memory cleared";
+    }
+    function memoryRecall() {
+      input.value += memory;
+    }
+    function memoryAdd() {
+      const val = calculate();
+      if (val !== null) memory += val;
+      document.getElementById("result").innerText = "Memory: " + memory;
+    }
+    function memorySubtract() {
+      const val = calculate();
+      if (val !== null) memory -= val;
+      document.getElementById("result").innerText = "Memory: " + memory;
+    }
+
+    // Keyboard support
+    input.addEventListener("keydown", e => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        calculate();
+      }
+      if (e.key === "Backspace") {
+        input.value = input.value.slice(0, -1);
+        e.preventDefault();
+      }
+    });
   </script>
 
 </body>
